@@ -1,6 +1,9 @@
 import tkinter as tk
 from abc import ABC, abstractmethod
 
+# Excepción personalizada requerida para las validaciones
+class ErrorValidacion(Exception):
+    pass
 class Entidad(ABC):
     """Clase abstracta que representa entidades generales con identificación."""
     def __init__(self, id_entidad):
@@ -43,6 +46,7 @@ class Cliente(Entidad):
 
     def obtener_resumen(self):
         return f"Cliente: {self.nombre} (ID: {self.id_entidad}, Email: {self.correo})"
+
 #Una clase abstracta que representa entidades generales del sistema. (EN CONSTRCUCCION)
 #class Entidades(ABC):
     #@abstractmethod
