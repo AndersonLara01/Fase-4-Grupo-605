@@ -1,6 +1,48 @@
 import tkinter as tk
 from abc import ABC, abstractmethod
 
+class Entidad(ABC):
+    """Clase abstracta que representa entidades generales con identificación."""
+    def __init__(self, id_entidad):
+        self._id_entidad = id_entidad
+
+    @property
+    def id_entidad(self):
+        return self._id_entidad
+
+    @abstractmethod
+    def obtener_resumen(self):
+        pass
+
+class Cliente(Entidad):
+    """Clase Cliente con encapsulación de datos personales."""
+    def __init__(self, id_cliente, nombre, correo):
+        super().__init__(id_cliente)
+        self.nombre = nombre
+        self.correo = correo
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @nombre.setter
+    def nombre(self, valor):
+        if not valor or len(valor.strip()) < 3:
+            raise ErrorValidacion("El nombre debe tener al menos 3 caracteres.")
+        self._nombre = valor.strip()
+
+    @property
+    def correo(self):
+        return self._correo
+
+    @correo.setter
+    def correo(self, valor):
+        if "@" not in valor or "." not in valor:
+            raise ErrorValidacion("Formato de correo electrónico inválido.")
+        self._correo = valor.strip()
+
+    def obtener_resumen(self):
+        return f"Cliente: {self.nombre} (ID: {self.id_entidad}, Email: {self.correo})"
 #Una clase abstracta que representa entidades generales del sistema. (EN CONSTRCUCCION)
 #class Entidades(ABC):
     #@abstractmethod
