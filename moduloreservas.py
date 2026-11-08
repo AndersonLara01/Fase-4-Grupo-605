@@ -70,7 +70,7 @@ class Inicio:
     def __init__(self):
         self.ventana_inicio = tk.Tk()
         self.ventana_inicio.geometry("1200x700+170+50")
-        self.ventana_inicio.title("Modulo reservas")
+        self.ventana_inicio.title("Sistema Integral de Gestión de Clientes, Servicios y Reservas")
         self.ventana_inicio.resizable(False, False)
 
         self.titulo = tk.Label(self.ventana_inicio, text="SOFTWARE FJ", font=("Times new roman", 30))
@@ -80,15 +80,14 @@ class Inicio:
         self.ventana_inicio.mainloop()
 
 
-class Reservar_sala:
+class Reservar_sala(Servicio):
     pass
 
-class Alquilar_equipo:
+class Alquilar_equipo(Servicio):
     pass
 
-class Asesoria_especializada:
+class Asesoria_especializada(Servicio):
     pass
 
 if __name__ == "__main__":
     Inicio()
-
