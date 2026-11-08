@@ -8,6 +8,7 @@ class Ventana:
 
     def iniciar(self):
         self.ventana_inicio.mainloop()
+        print("Intento de commit")
 
 if __name__ == "__main__":
     app = Ventana()
