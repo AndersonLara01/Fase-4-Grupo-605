@@ -73,8 +73,38 @@ class Inicio:
         self.ventana_inicio.title("Sistema Integral de Gestión de Clientes, Servicios y Reservas")
         self.ventana_inicio.resizable(False, False)
 
+        #Columnas para la distribución de los frames principales (No se estan usando)
+        # self.ventana_inicio.columnconfigure(0, weight=1)
+        # self.ventana_inicio.columnconfigure(1, weight=1)
+        # self.ventana_inicio.columnconfigure(2, weight=1)
+
+        #Titulo de la ventana principal
         self.titulo = tk.Label(self.ventana_inicio, text="SOFTWARE FJ", font=("Times new roman", 30))
         self.titulo.pack(side="top", fill="both")
+
+        #Frame de reservas
+        self.frame_reservas = tk.Frame(self.ventana_inicio, bg="#DDC721")
+        self.frame_reservas.pack(fill="both", expand=True, side="left")
+
+        #Frame de alquiler
+        self.frame_alquiler = tk.Frame(self.ventana_inicio, bg="#16C63C")
+        self.frame_alquiler.pack(fill="both", expand=True, side="left")
+
+        #Frame de asesoria
+        self.frame_asesoria = tk.Frame(self.ventana_inicio, bg="#154FCC")
+        self.frame_asesoria.pack(fill="both", expand=True, side="left")
+
+        #Titulo del frame de reservas
+        self.titulo.reserva_sala = tk.Label(self.frame_reservas, text="Reservar sala", font=("Times new roman", 15))
+        self.titulo.reserva_sala.pack(side="top", fill="x")
+
+        #Titulo del frame de alquiler
+        self.titulo.alquiler = tk.Label(self.frame_alquiler, text="Alquilar equipo", font=("Times new roman", 15))
+        self.titulo.alquiler.pack(side="top", fill="x")
+
+        #Titulo del frame de asesoria
+        self.titulo.asesoria = tk.Label(self.frame_asesoria, text="Asesoria especializada", font=("Times new roman", 15))
+        self.titulo.asesoria.pack(side="top", fill="x")
 
     #Mantener la ventana de inicio abierta
         self.ventana_inicio.mainloop()
