@@ -86,6 +86,13 @@ class Inicio:
         self.frame_reservas = tk.Frame(self.ventana_inicio, bg="#DDC721")
         self.frame_reservas.pack(fill="both", expand=True, side="left")
 
+        #Titulo del frame de reservas
+        #self.titulo.reserva_sala = tk.Label(self.frame_reservas, text="Reservar sala", font=("Times new roman", 15), bg="#B8AEAE")
+        #self.titulo.reserva_sala.pack(side="top", fill="x")
+
+        boton_reserva_sala = tk.Button(self.frame_reservas, text="Reservar sala", font=("Times new roman", 20), width=15, height=60, bg="#A90A99", fg="#FFFFFF")
+        boton_reserva_sala.pack(side="top", pady=200)
+
         #Frame de alquiler
         self.frame_alquiler = tk.Frame(self.ventana_inicio, bg="#16C63C")
         self.frame_alquiler.pack(fill="both", expand=True, side="left")
@@ -94,9 +101,7 @@ class Inicio:
         self.frame_asesoria = tk.Frame(self.ventana_inicio, bg="#154FCC")
         self.frame_asesoria.pack(fill="both", expand=True, side="left")
 
-        #Titulo del frame de reservas
-        self.titulo.reserva_sala = tk.Label(self.frame_reservas, text="Reservar sala", font=("Times new roman", 15))
-        self.titulo.reserva_sala.pack(side="top", fill="x")
+
 
         #Titulo del frame de alquiler
         self.titulo.alquiler = tk.Label(self.frame_alquiler, text="Alquilar equipo", font=("Times new roman", 15))
