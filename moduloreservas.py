@@ -1,6 +1,9 @@
 import tkinter as tk
 from abc import ABC, abstractmethod
 
+# Importar el sistema de logs
+from logs import logger
+
 # Excepción personalizada requerida para las validaciones
 class ErrorValidacion(Exception):
     pass
@@ -129,6 +132,7 @@ class Reserva(Entidad):
         if self._estado != "Pendiente":
             raise ErrorValidacion(f"No se puede confirmar una reserva en estado {self._estado}.")
         self._estado = "Confirmada"
+        logger.info(f"Reserva {self.id_entidad} confirmada correctamente.")
 
     def cancelar(self):
         # No se puede cancelar una reserva ya cancelada o procesada
@@ -156,6 +160,7 @@ class Reserva(Entidad):
 #Ventana de inicio
 class Inicio:
     def __init__(self):
+        logger.info("Iniciando SOFTWARE FJ")
         self.ventana_inicio = tk.Tk()
         self.ventana_inicio.geometry("1200x700+170+50")
         self.ventana_inicio.title("Sistema Integral de Gestión de Clientes, Servicios y Reservas")
