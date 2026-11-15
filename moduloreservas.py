@@ -209,3 +209,5 @@ class Asesoria_especializada(Servicio):
 
 if __name__ == "__main__":
     Inicio()
+
+print("Hola mundo")
