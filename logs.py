@@ -1,4 +1,3 @@
-
 import logging
 
 def configurar_logs():
