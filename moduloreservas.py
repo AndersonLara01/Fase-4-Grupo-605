@@ -183,25 +183,41 @@ class Inicio:
         #self.titulo.reserva_sala = tk.Label(self.frame_reservas, text="Reservar sala", font=("Times new roman", 15), bg="#B8AEAE")
         #self.titulo.reserva_sala.pack(side="top", fill="x")
 
-        boton_reserva_sala = tk.Button(self.frame_reservas, text="Reservar sala", font=("Times new roman", 20), width=15, height=60, bg="#A90A99", fg="#FFFFFF")
+        def volver_inicio():
+            self.frame_interfaz_reserva.pack_forget()
+            self.titulo.pack(side="top", fill="both")
+            self.frame_reservas.pack(fill="both", expand=True, side="left")
+            self.frame_alquiler.pack(fill="both", expand=True, side="left")
+            self.frame_asesoria.pack(fill="both", expand=True, side="left")
+
+        def interfaz_reserva():
+            self.titulo.pack_forget()
+            self.frame_reservas.pack_forget()
+            self.frame_alquiler.pack_forget()
+            self.frame_asesoria.pack_forget()
+            self.frame_interfaz_reserva = tk.Frame(self.ventana_inicio, bg="#FF1212")
+            self.frame_interfaz_reserva.pack(fill="both", expand=True)
+            tk.Button(self.frame_interfaz_reserva, text="←", font=("Times new roman", 20), command=volver_inicio,).pack(side="top", anchor="nw", padx=10, pady=10)
+            tk.Label(self.frame_interfaz_reserva, text="Reserva de sala", font=("Times new roman", 30), bg="#FF1212",).pack(side="top", fill="x")
+
+        boton_reserva_sala = tk.Button(self.frame_reservas, text="Reservar sala", font=("Times new roman", 20), width=15, height=60, bg="#A90A99", fg="#FFFFFF", command=interfaz_reserva)
         boton_reserva_sala.pack(side="top", pady=200)
+
 
         #Frame de alquiler
         self.frame_alquiler = tk.Frame(self.ventana_inicio, bg="#16C63C")
         self.frame_alquiler.pack(fill="both", expand=True, side="left")
+
         #Titulo del frame de alquiler
         #self.titulo.alquiler = tk.Label(self.frame_alquiler, text="Alquilar equipo", font=("Times new roman", 15))
         #self.titulo.alquiler.pack(side="top", fill="x")
+
         boton_alquiler= tk.Button(self.frame_alquiler, text= "Alquilar equipo", font= ("times new roman", 20), width=15, height=60) 
         boton_alquiler.pack(side="top", pady=200)
         
         #Frame de asesoria
         self.frame_asesoria = tk.Frame(self.ventana_inicio, bg="#154FCC")
         self.frame_asesoria.pack(fill="both", expand=True, side="left")
-
-
-
-       
 
         #Titulo del frame de asesoria
         self.titulo.asesoria = tk.Label(self.frame_asesoria, text="Asesoria especializada", font=("Times new roman", 15))
@@ -222,5 +238,3 @@ class Asesoria_especializada(Servicio):
 
 if __name__ == "__main__":
     Inicio()
-
-print("Hola mundo")
