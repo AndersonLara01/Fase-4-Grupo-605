@@ -175,14 +175,14 @@ class Inicio:
         # self.ventana_inicio.columnconfigure(2, weight=1)
 
         #Titulo de la ventana principal
-        self.titulo = tk.Label(self.ventana_inicio, text="SOFTWARE FJ", font=("Times new roman", 30))
-        self.titulo.pack(side="top", fill="both")
+        self.titulo = tk.Label(self.ventana_inicio, text="SOFTWARE FJ", font=("Times new roman", 30), bg="#EFEFEF")
+        self.titulo.pack(side="top", fill="both", pady=10, expand=True)
 
         boton_iniciar_sesion = tk.Button(self.titulo, text="Iniciar sesión", font=("Times new roman", 10), relief="groove")
         boton_iniciar_sesion.pack(side="right")
 
         #Frame de reservas
-        self.frame_reservas = tk.Frame(self.ventana_inicio, bg="#DDC721")
+        self.frame_reservas = tk.Frame(self.ventana_inicio, bg="#FFBB0C")
         self.frame_reservas.pack(fill="both", expand=True, side="left")
 
         #Titulo del frame de reservas
@@ -209,28 +209,33 @@ class Inicio:
             tk.Label(self.frame_interfaz_reserva, text="Reserva de sala", font=("Times new roman", 30), bg="#12BCFF",).pack(side="top", fill="x")
 
         #Boton del menu principal para abrir la interfaz de reserva
-        boton_reserva_sala = tk.Button(self.frame_reservas, text="Reservar sala", font=("Times new roman", 20), width=15, height=60, bg="#A90A99", fg="#FFFFFF", command=interfaz_reserva)
+        boton_reserva_sala = tk.Button(self.frame_reservas, text="Reservar sala", font=("Times new roman", 20), width=15, height=60, bg="#2F4371", fg="#FFFFFF", command=interfaz_reserva)
         boton_reserva_sala.pack(side="top", pady=200)
 
 
         #Frame de alquiler
-        self.frame_alquiler = tk.Frame(self.ventana_inicio, bg="#16C63C")
+        self.frame_alquiler = tk.Frame(self.ventana_inicio, bg="#F7F4E9")
         self.frame_alquiler.pack(fill="both", expand=True, side="left")
 
         #Titulo del frame de alquiler
         #self.titulo.alquiler = tk.Label(self.frame_alquiler, text="Alquilar equipo", font=("Times new roman", 15))
         #self.titulo.alquiler.pack(side="top", fill="x")
 
-        boton_alquiler= tk.Button(self.frame_alquiler, text= "Alquilar equipo", font= ("times new roman", 20), width=15, height=60) 
+        boton_alquiler= tk.Button(self.frame_alquiler, text= "Alquilar equipo", font= ("times new roman", 20), width=15, height=60, bg="#FFBB0C") 
         boton_alquiler.pack(side="top", pady=200)
         
         #Frame de asesoria
-        self.frame_asesoria = tk.Frame(self.ventana_inicio, bg="#154FCC")
+        self.frame_asesoria = tk.Frame(self.ventana_inicio, bg="#2F4371")
         self.frame_asesoria.pack(fill="both", expand=True, side="left")
 
         #Titulo del frame de asesoria
-        self.titulo.asesoria = tk.Label(self.frame_asesoria, text="Asesoria especializada", font=("Times new roman", 15))
-        self.titulo.asesoria.pack(side="top", fill="x")
+        #self.titulo.asesoria = tk.Label(self.frame_asesoria, text="Asesoria especializada", font=("Times new roman", 15))
+        #self.titulo.asesoria.pack(side="top", fill="x")
+
+        boton_asesoria= tk.Button(self.frame_asesoria, text= "Asesoria \nespecializada", font= ("times new roman", 20), width=15, height=60, bg="#F4F7E9") 
+        boton_asesoria.pack(side="top", pady=200)
+        
+
 
     #Mantener la ventana de inicio abierta
         self.ventana_inicio.mainloop()
