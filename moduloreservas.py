@@ -189,16 +189,19 @@ class Inicio:
         #Frame de alquiler
         self.frame_alquiler = tk.Frame(self.ventana_inicio, bg="#16C63C")
         self.frame_alquiler.pack(fill="both", expand=True, side="left")
-
+        #Titulo del frame de alquiler
+        #self.titulo.alquiler = tk.Label(self.frame_alquiler, text="Alquilar equipo", font=("Times new roman", 15))
+        #self.titulo.alquiler.pack(side="top", fill="x")
+        boton_alquiler= tk.Button(self.frame_alquiler, text= "Alquilar equipo", font= ("times new roman", 20), width=15, height=60) 
+        boton_alquiler.pack(side="top", pady=200)
+        
         #Frame de asesoria
         self.frame_asesoria = tk.Frame(self.ventana_inicio, bg="#154FCC")
         self.frame_asesoria.pack(fill="both", expand=True, side="left")
 
 
 
-        #Titulo del frame de alquiler
-        self.titulo.alquiler = tk.Label(self.frame_alquiler, text="Alquilar equipo", font=("Times new roman", 15))
-        self.titulo.alquiler.pack(side="top", fill="x")
+       
 
         #Titulo del frame de asesoria
         self.titulo.asesoria = tk.Label(self.frame_asesoria, text="Asesoria especializada", font=("Times new roman", 15))
