@@ -175,6 +175,9 @@ class Inicio:
         self.titulo = tk.Label(self.ventana_inicio, text="SOFTWARE FJ", font=("Times new roman", 30))
         self.titulo.pack(side="top", fill="both")
 
+        boton_iniciar_sesion = tk.Button(self.titulo, text="Iniciar sesión", font=("Times new roman", 10), relief="groove")
+        boton_iniciar_sesion.pack(side="right")
+
         #Frame de reservas
         self.frame_reservas = tk.Frame(self.ventana_inicio, bg="#DDC721")
         self.frame_reservas.pack(fill="both", expand=True, side="left")
@@ -183,6 +186,7 @@ class Inicio:
         #self.titulo.reserva_sala = tk.Label(self.frame_reservas, text="Reservar sala", font=("Times new roman", 15), bg="#B8AEAE")
         #self.titulo.reserva_sala.pack(side="top", fill="x")
 
+        #Logica para regresar a la interfaz principal
         def volver_inicio():
             self.frame_interfaz_reserva.pack_forget()
             self.titulo.pack(side="top", fill="both")
@@ -190,16 +194,18 @@ class Inicio:
             self.frame_alquiler.pack(fill="both", expand=True, side="left")
             self.frame_asesoria.pack(fill="both", expand=True, side="left")
 
+        #Interfaz del modulo de reserva
         def interfaz_reserva():
             self.titulo.pack_forget()
             self.frame_reservas.pack_forget()
             self.frame_alquiler.pack_forget()
             self.frame_asesoria.pack_forget()
-            self.frame_interfaz_reserva = tk.Frame(self.ventana_inicio, bg="#FF1212")
+            self.frame_interfaz_reserva = tk.Frame(self.ventana_inicio, bg="#12BCFF")
             self.frame_interfaz_reserva.pack(fill="both", expand=True)
             tk.Button(self.frame_interfaz_reserva, text="←", font=("Times new roman", 20), command=volver_inicio,).pack(side="top", anchor="nw", padx=10, pady=10)
-            tk.Label(self.frame_interfaz_reserva, text="Reserva de sala", font=("Times new roman", 30), bg="#FF1212",).pack(side="top", fill="x")
+            tk.Label(self.frame_interfaz_reserva, text="Reserva de sala", font=("Times new roman", 30), bg="#12BCFF",).pack(side="top", fill="x")
 
+        #Boton del menu principal para abrir la interfaz de reserva
         boton_reserva_sala = tk.Button(self.frame_reservas, text="Reservar sala", font=("Times new roman", 20), width=15, height=60, bg="#A90A99", fg="#FFFFFF", command=interfaz_reserva)
         boton_reserva_sala.pack(side="top", pady=200)
 
