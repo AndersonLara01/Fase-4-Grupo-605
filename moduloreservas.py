@@ -32,6 +32,7 @@ class Cliente(Entidad):
         super().__init__(id_cliente)
         self.nombre = nombre
         self.correo = correo
+        logger.info(f"Cliente creado correctamente. ID: {id_cliente}")
 
     @property
     def nombre(self):
@@ -40,8 +41,10 @@ class Cliente(Entidad):
     @nombre.setter
     def nombre(self, valor):
         if not valor or not isinstance(valor, str) or len(valor.strip()) < 3:
+            logger.warning("Intento de registrar un nombre inválido.")
             raise ErrorValidacion("El nombre debe tener al menos 3 caracteres.")
         if any(char.isdigit() for char in valor):
+            logger.warning("Intento de registrar un nombre con números.")
             raise ErrorValidacion("El nombre no puede contener números.")
         self._nombre = valor.strip()
 
@@ -53,6 +56,7 @@ class Cliente(Entidad):
     def correo(self, valor):
         patron = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not valor or not isinstance(valor, str) or not re.match(patron, valor.strip()):
+            logger.warning("Intento de registrar un correo inválido.")
             raise ErrorValidacion("Formato de correo electrónico inválido.")
         self._correo = valor.strip()
 
@@ -79,16 +83,20 @@ class Reserva(Entidad):
         super().__init__(id_reserva)
         # Validaciones de los datos recibidos
         if not isinstance(cliente, Cliente):
+            logger.warning("Intento de crear reserva sin cliente válido.")
             raise ErrorValidacion("La reserva requiere un cliente válido.")
         if not isinstance(servicio, Servicio):
+            logger.warning("Intento de crear reserva sin servicio válido.")
             raise ErrorValidacion("La reserva requiere un servicio válido.")
         if isinstance(duracion, bool) or not isinstance(duracion, (int, float)) or duracion <= 0:
+            logger.warning("Intento de crear reserva con duración inválida.")
             raise ErrorValidacion("La duración debe ser un número mayor que 0.")
         self._cliente = cliente
         self._servicio = servicio
         self._duracion = duracion
         self._estado = "Pendiente"
         self._costo_total = None
+        logger.info(f"Reserva {id_reserva} creada correctamente.")
 
     @property
     def estado(self):
@@ -101,6 +109,7 @@ class Reserva(Entidad):
     def confirmar(self):
         # Solo se puede confirmar una reserva pendiente
         if self._estado != "Pendiente":
+            logger.warning(f"Intento de confirmar reserva {self.id_entidad} " f"en estado {self._estado}.")
             raise ErrorValidacion(f"No se puede confirmar una reserva en estado {self._estado}.")
         self._estado = "Confirmada"
         logger.info(f"Reserva {self.id_entidad} confirmada correctamente.")
@@ -108,21 +117,26 @@ class Reserva(Entidad):
     def cancelar(self):
         # No se puede cancelar una reserva ya cancelada o procesada
         if self._estado in ("Cancelada", "Procesada"):
+            logger.warning(f"Intento de cancelar reserva {self.id_entidad} " f"en estado {self._estado}.")
             raise ErrorValidacion(f"No se puede cancelar una reserva en estado {self._estado}.")
         self._estado = "Cancelada"
+        logger.info(f"Reserva {self.id_entidad} cancelada correctamente.")
 
     def procesar(self):
         try:
             if self._estado != "Confirmada":
+                logger.warning(f"Intento de procesar reserva {self.id_entidad} " f"sin estar confirmada.")
                 raise ErrorValidacion(f"Solo se procesan reservas confirmadas (estado actual: {self._estado}).")
             costo = self._servicio.calcular_costo() * self._duracion
         except (TypeError, ValueError) as e:
             # Encadenamiento de excepciones: se conserva la causa original
             self._estado = "Fallida"
+            logger.exception(f"Error al procesar reserva {self.id_entidad}.")
             raise ErrorValidacion("No se pudo calcular el costo de la reserva.") from e
         else:
             self._costo_total = costo
             self._estado = "Procesada"
+            logger.info(f"Reserva {self.id_entidad} procesada correctamente. " f"Costo: {costo}")
             return costo
 
     def obtener_resumen(self):
@@ -172,6 +186,7 @@ class Inicio:
             def validar_cliente():
                 id_val = entry_id.get().strip()
                 if not id_val:
+                    logger.warning("Intento de inicio de sesión sin ID de cliente.")
                     messagebox.showerror("Error", "El ID del cliente es obligatorio.", parent=ventana_login)
                     return
                 try:
@@ -200,6 +215,7 @@ class Inicio:
 
         #Logica para regresar a la interfaz principal
         def volver_inicio():
+            logger.info("El usuario regresó al menú principal.")
             self.frame_interfaz_reserva.pack_forget()
             self.titulo.pack(side="top", fill="both")
             self.frame_reservas.pack(fill="both", expand=True, side="left")
@@ -208,6 +224,7 @@ class Inicio:
 
         #Interfaz del modulo de reserva
         def interfaz_reserva():
+            logger.info("El usuario ingresó al módulo de reservas.")
             self.titulo.pack_forget()
             self.frame_reservas.pack_forget()
             self.frame_alquiler.pack_forget()
