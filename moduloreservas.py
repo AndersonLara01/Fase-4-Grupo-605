@@ -2,7 +2,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import tkinter as tk
-from tkinter import messagebox, ttk   # se agrega ttk es porque es necesario para el menú desplegable de salas.
+from tkinter import messagebox, ttk   # se agrega ttk porque es necesario para el menú desplegable de salas.
 from abc import ABC, abstractmethod
 import re
 
@@ -301,7 +301,7 @@ class Inicio:
         #Logica para regresar a la interfaz principal
         def volver_inicio():
             logger.info("El usuario regresó al menú principal.")
-            self.frame_interfaz_reserva.destroy()   # [MODIFICADO] antes era pack_forget(); destroy evita acumular frames
+            self.frame_interfaz_reserva.destroy()   #henry: antes era pack_forget(); destroy evita acumular frames
             self.titulo.pack(side="top", fill="both")
             self.frame_reservas.pack(fill="both", expand=True, side="left")
             self.frame_alquiler.pack(fill="both", expand=True, side="left")
@@ -319,7 +319,6 @@ class Inicio:
             tk.Button(self.frame_interfaz_reserva, text="←", font=("Times new roman", 20), command=volver_inicio,).pack(side="top", anchor="nw", padx=10, pady=10)
             tk.Label(self.frame_interfaz_reserva, text="Reserva de sala", font=("Times new roman", 30), bg="#12BCFF",).pack(side="top", fill="x")
 
-            # ---------------- [NUEVO] CONTENIDO DEL MÓDULO DE RESERVA DE SALAS ----------------
             marco = self.frame_interfaz_reserva
             fuente = ("Times new roman", 12)
 
