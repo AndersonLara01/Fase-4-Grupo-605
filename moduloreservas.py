@@ -785,7 +785,8 @@ class Inicio:
         
 
 
-    #Mantener la ventana de inicio abierta
+        #Mantener la ventana de inicio abierta
+    def ejecutar(self):
         self.ventana_inicio.mainloop()
 
 class Alquilar_equipo(Servicio):
@@ -794,6 +795,10 @@ class Alquilar_equipo(Servicio):
     DIAS_MAX = 30
     SEGURO = 0.05   # el seguro del equipo es el 5% de la tarifa diaria
 
+<<<<<<< HEAD
+class ReservarSala(Servicio):
+    pass
+=======
     def __init__(self, nombre, tarifa_dia, categoria, disponible=True):
         # Validaciones estrictas de los datos del equipo
         if not isinstance(nombre, str) or len(nombre.strip()) < 3:
@@ -809,13 +814,23 @@ class Alquilar_equipo(Servicio):
         self._categoria = categoria.strip()
         self._disponible = disponible
         logger.info(f"Equipo creado correctamente: {self._nombre} ({self._categoria})")
+>>>>>>> 4ca76827c6a4f88a3955ce054262738b3072cef5
 
+<<<<<<< HEAD
+class AlquilarEquipo(Servicio):
+    pass
+=======
     @staticmethod
     def _rechazar(mensaje):
         # Registra la advertencia en el log y devuelve la excepción para lanzarla
         logger.warning(f"Equipo: {mensaje}")
         return ErrorValidacion(mensaje)
+>>>>>>> 4ca76827c6a4f88a3955ce054262738b3072cef5
 
+<<<<<<< HEAD
+class AsesoriaEspecializada(Servicio):
+    pass
+=======
     @property
     def nombre(self):
         return self._nombre
@@ -872,6 +887,7 @@ class Asesoria_especializada(Servicio):
     HORAS_MIN = 1
     HORAS_MAX = 8
     NIVELES = {"junior": 1.0, "senior": 1.5}   # el nivel senior cuesta 50% más
+>>>>>>> 4ca76827c6a4f88a3955ce054262738b3072cef5
 
     def __init__(self, nombre, tarifa_hora, nivel, disponible=True):
         # Validaciones estrictas de los datos de la asesoría
@@ -947,4 +963,4 @@ class Asesoria_especializada(Servicio):
 
 
 if __name__ == "__main__":
-    Inicio()
+    Inicio().ejecutar()
