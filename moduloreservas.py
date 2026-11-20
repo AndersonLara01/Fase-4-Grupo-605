@@ -458,19 +458,329 @@ class Inicio:
         #Titulo del frame de alquiler
         #self.titulo.alquiler = tk.Label(self.frame_alquiler, text="Alquilar equipo", font=("Times new roman", 15))
         #self.titulo.alquiler.pack(side="top", fill="x")
+        #--- Módulo de alquiler de equipos: lista interna de equipos y de sus reservas ---
+        self.equipos = [
+            Alquilar_equipo("Portátil", 30000, "Cómputo"),
+            Alquilar_equipo("Proyector", 25000, "Audiovisual"),
+            Alquilar_equipo("Cámara profesional", 45000, "Audiovisual"),
+        ]
+        self.reservas_alquiler = []  # cada elemento es una tupla (Reserva, Alquilar_equipo)
 
-        boton_alquiler= tk.Button(self.frame_alquiler, text= "Alquilar equipo", font= ("times new roman", 20), width=15, height=60, bg="#FFBB0C") 
+        #Logica para regresar al menú principal desde alquiler de equipos
+        def volver_inicio_alquiler():
+            logger.info("El usuario regresó al menú principal desde alquiler de equipos.")
+            self.frame_interfaz_alquiler.destroy()
+            self.titulo.pack(side="top", fill="both")
+            self.frame_reservas.pack(fill="both", expand=True, side="left")
+            self.frame_alquiler.pack(fill="both", expand=True, side="left")
+            self.frame_asesoria.pack(fill="both", expand=True, side="left")
+
+        #Interfaz del modulo de alquiler de equipos
+        def interfaz_alquiler():
+            logger.info("El usuario ingresó al módulo de alquiler de equipos.")
+            self.titulo.pack_forget()
+            self.frame_reservas.pack_forget()
+            self.frame_alquiler.pack_forget()
+            self.frame_asesoria.pack_forget()
+            color = "#F5D76E"
+            fuente = ("Times new roman", 12)
+            self.frame_interfaz_alquiler = tk.Frame(self.ventana_inicio, bg=color)
+            self.frame_interfaz_alquiler.pack(fill="both", expand=True)
+            marco = self.frame_interfaz_alquiler
+            tk.Button(marco, text="←", font=("Times new roman", 20), command=volver_inicio_alquiler).pack(side="top", anchor="nw", padx=10, pady=10)
+            tk.Label(marco, text="Alquiler de equipos", font=("Times new roman", 30), bg=color).pack(side="top", fill="x")
+
+            # Variables ligadas a los campos de la interfaz
+            var_equipo = tk.StringVar()
+            var_dias = tk.StringVar()
+            var_costo = tk.StringVar(value="Costo estimado: -")
+            var_detalle = tk.StringVar(value="")
+
+            # Lista donde se muestran las reservas de alquiler (se empaqueta al final)
+            lista = tk.Listbox(marco, width=130, height=8, font=("Courier", 10), exportselection=False)
+
+            def obtener_equipo():
+                # Busca en la lista interna el equipo elegido en el Combobox
+                for equipo in self.equipos:
+                    if equipo.nombre == var_equipo.get():
+                        return equipo
+                logger.warning("Intento de alquilar sin seleccionar un equipo.")
+                raise ErrorValidacion("Debes seleccionar un equipo.")
+
+            def obtener_dias():
+                # Convierte el texto ingresado en número; si no se puede, lanza ErrorValidacion (con encadenamiento)
+                try:
+                    dias = float(var_dias.get())
+                    return int(dias) if dias.is_integer() else dias   # 3.0 se muestra como 3
+                except ValueError as e:
+                    logger.warning("Días de alquiler ingresados no numéricos.")
+                    raise ErrorValidacion("Los días deben ser un número.") from e
+
+            def mostrar_detalle(evento=None):
+                try:
+                    var_detalle.set(obtener_equipo().describir_servicio())
+                except ErrorValidacion:
+                    var_detalle.set("")
+
+            def refrescar_lista():
+                lista.delete(0, "end")
+                for reserva, equipo in self.reservas_alquiler:
+                    total = f" | Total: ${reserva.costo_total:,.0f}" if reserva.costo_total is not None else ""
+                    lista.insert("end", f"{reserva.obtener_resumen()} | {equipo.nombre}{total}")
+
+            def reserva_seleccionada():
+                seleccion = lista.curselection()
+                if not seleccion:
+                    logger.warning("Intento de operar sin seleccionar una reserva de alquiler.")
+                    raise ErrorValidacion("Selecciona una reserva de la lista.")
+                return self.reservas_alquiler[seleccion[0]][0]
+
+            def calcular_costo_estimado():
+                try:
+                    equipo = obtener_equipo()
+                    dias = obtener_dias()
+                    var_costo.set(f"Costo estimado: ${equipo.calcular_costo(dias):,.0f}")
+                except ErrorValidacion as e:
+                    var_costo.set("Costo estimado: -")
+                    messagebox.showerror("Error de validación", str(e))
+
+            def reservar():
+                # Crea la reserva y la deja confirmada (try/except/else/finally)
+                try:
+                    if self.cliente_activo is None:
+                        logger.warning("Intento de alquilar un equipo sin sesión iniciada.")
+                        raise ErrorValidacion("Debes iniciar sesión antes de reservar.")
+                    equipo = obtener_equipo()
+                    dias = obtener_dias()
+                    equipo.validar_parametro(dias)
+                    if not equipo.disponible:
+                        logger.warning(f"Intento de alquilar un equipo no disponible: {equipo.nombre}")
+                        raise ErrorValidacion(f"El equipo '{equipo.nombre}' no está disponible.")
+                    reserva = Reserva(f"ALQ-{len(self.reservas_alquiler) + 1:03d}", self.cliente_activo, equipo, dias)
+                    reserva.confirmar()
+                except ErrorValidacion as e:
+                    messagebox.showerror("No se pudo reservar", str(e))
+                else:
+                    self.reservas_alquiler.append((reserva, equipo))
+                    refrescar_lista()
+                    messagebox.showinfo("Reserva creada", reserva.obtener_resumen())
+                finally:
+                    logger.info("Operación de alquiler de equipo finalizada.")
+
+            def procesar_seleccionada():
+                try:
+                    costo = reserva_seleccionada().procesar()
+                except ErrorValidacion as e:
+                    messagebox.showerror("No se pudo procesar", str(e))
+                else:
+                    messagebox.showinfo("Reserva procesada", f"Total a pagar: ${costo:,.0f}")
+                finally:
+                    refrescar_lista()
+
+            def cancelar_seleccionada():
+                try:
+                    reserva_seleccionada().cancelar()
+                except ErrorValidacion as e:
+                    messagebox.showerror("No se pudo cancelar", str(e))
+                else:
+                    messagebox.showinfo("Reserva cancelada", "La reserva fue cancelada correctamente.")
+                finally:
+                    refrescar_lista()
+
+            # Widgets del formulario
+            texto_cliente = (f"Cliente activo: {self.cliente_activo.nombre}" if self.cliente_activo
+                             else "Sin sesión iniciada: vuelve al menú e inicia sesión para reservar")
+            tk.Label(marco, text=texto_cliente, font=fuente, bg=color).pack(pady=5)
+
+            tk.Label(marco, text="Equipo:", font=fuente, bg=color).pack()
+            combo = ttk.Combobox(marco, textvariable=var_equipo, state="readonly", width=40,
+                                 values=[equipo.nombre for equipo in self.equipos])
+            combo.pack()
+            combo.bind("<<ComboboxSelected>>", mostrar_detalle)
+            tk.Label(marco, textvariable=var_detalle, font=fuente, bg=color).pack(pady=3)
+
+            tk.Label(marco, text="Días (1 a 30):", font=fuente, bg=color).pack()
+            tk.Entry(marco, textvariable=var_dias, font=fuente, width=10).pack()
+            tk.Label(marco, textvariable=var_costo, font=fuente, bg=color).pack(pady=3)
+
+            botones = tk.Frame(marco, bg=color)
+            botones.pack(pady=8)
+            tk.Button(botones, text="Calcular costo", font=fuente, command=calcular_costo_estimado).pack(side="left", padx=5)
+            tk.Button(botones, text="Alquilar", font=fuente, bg="#2F4371", fg="#FFFFFF", command=reservar).pack(side="left", padx=5)
+            tk.Button(botones, text="Procesar seleccionada", font=fuente, command=procesar_seleccionada).pack(side="left", padx=5)
+            tk.Button(botones, text="Cancelar seleccionada", font=fuente, command=cancelar_seleccionada).pack(side="left", padx=5)
+
+            tk.Label(marco, text="Mis alquileres (selecciona una para procesarla o cancelarla):", font=fuente, bg=color).pack()
+            lista.pack(padx=10, pady=5)
+            refrescar_lista()   # muestra las reservas hechas antes de salir y volver a entrar
+
+
+        boton_alquiler= tk.Button(self.frame_alquiler, text= "Alquilar equipo", font= ("times new roman", 20), width=15, height=60, bg="#FFBB0C", command=interfaz_alquiler) 
         boton_alquiler.pack(side="top", pady=200)
         
         #Frame de asesoria
         self.frame_asesoria = tk.Frame(self.ventana_inicio, bg="#2F4371")
         self.frame_asesoria.pack(fill="both", expand=True, side="left")
+        #--- Módulo de asesoría especializada: lista interna de asesorías y de sus reservas ---
+        self.asesorias = [
+            Asesoria_especializada("Asesoría en Python", 50000, "junior"),
+            Asesoria_especializada("Arquitectura de software", 80000, "senior"),
+            Asesoria_especializada("Bases de programación", 40000, "junior"),
+        ]
+        self.reservas_asesoria = []  # cada elemento es una tupla (Reserva, Asesoria_especializada)
 
+        #Logica para regresar al menú principal desde la asesoría
+        def volver_inicio_asesoria():
+            logger.info("El usuario regresó al menú principal desde asesoría.")
+            self.frame_interfaz_asesoria.destroy()
+            self.titulo.pack(side="top", fill="both")
+            self.frame_reservas.pack(fill="both", expand=True, side="left")
+            self.frame_alquiler.pack(fill="both", expand=True, side="left")
+            self.frame_asesoria.pack(fill="both", expand=True, side="left")
+
+        #Interfaz del modulo de asesoría especializada
+        def interfaz_asesoria():
+            logger.info("El usuario ingresó al módulo de asesoría especializada.")
+            self.titulo.pack_forget()
+            self.frame_reservas.pack_forget()
+            self.frame_alquiler.pack_forget()
+            self.frame_asesoria.pack_forget()
+            color = "#8FD694"
+            fuente = ("Times new roman", 12)
+            self.frame_interfaz_asesoria = tk.Frame(self.ventana_inicio, bg=color)
+            self.frame_interfaz_asesoria.pack(fill="both", expand=True)
+            marco = self.frame_interfaz_asesoria
+            tk.Button(marco, text="←", font=("Times new roman", 20), command=volver_inicio_asesoria).pack(side="top", anchor="nw", padx=10, pady=10)
+            tk.Label(marco, text="Asesoría especializada", font=("Times new roman", 30), bg=color).pack(side="top", fill="x")
+
+            # Variables ligadas a los campos de la interfaz
+            var_asesoria = tk.StringVar()
+            var_horas = tk.StringVar()
+            var_costo = tk.StringVar(value="Costo estimado: -")
+            var_detalle = tk.StringVar(value="")
+
+            # Lista donde se muestran las reservas de asesoría (se empaqueta al final)
+            lista = tk.Listbox(marco, width=130, height=8, font=("Courier", 10), exportselection=False)
+
+            def obtener_asesoria():
+                # Busca en la lista interna la asesoría elegida en el Combobox
+                for asesoria in self.asesorias:
+                    if asesoria.nombre == var_asesoria.get():
+                        return asesoria
+                logger.warning("Intento de reservar sin seleccionar una asesoría.")
+                raise ErrorValidacion("Debes seleccionar una asesoría.")
+
+            def obtener_horas():
+                # Convierte el texto ingresado en número; si no se puede, lanza ErrorValidacion (con encadenamiento)
+                try:
+                    horas = float(var_horas.get())
+                    return int(horas) if horas.is_integer() else horas   # 3.0 se muestra como 3
+                except ValueError as e:
+                    logger.warning("Horas de asesoría ingresadas no numéricas.")
+                    raise ErrorValidacion("Las horas deben ser un número.") from e
+
+            def mostrar_detalle(evento=None):
+                try:
+                    var_detalle.set(obtener_asesoria().describir_servicio())
+                except ErrorValidacion:
+                    var_detalle.set("")
+
+            def refrescar_lista():
+                lista.delete(0, "end")
+                for reserva, asesoria in self.reservas_asesoria:
+                    total = f" | Total: ${reserva.costo_total:,.0f}" if reserva.costo_total is not None else ""
+                    lista.insert("end", f"{reserva.obtener_resumen()} | {asesoria.nombre}{total}")
+
+            def reserva_seleccionada():
+                seleccion = lista.curselection()
+                if not seleccion:
+                    logger.warning("Intento de operar sin seleccionar una reserva de asesoría.")
+                    raise ErrorValidacion("Selecciona una reserva de la lista.")
+                return self.reservas_asesoria[seleccion[0]][0]
+
+            def calcular_costo_estimado():
+                try:
+                    asesoria = obtener_asesoria()
+                    horas = obtener_horas()
+                    var_costo.set(f"Costo estimado: ${asesoria.calcular_costo(horas):,.0f}")
+                except ErrorValidacion as e:
+                    var_costo.set("Costo estimado: -")
+                    messagebox.showerror("Error de validación", str(e))
+
+            def reservar():
+                # Crea la reserva y la deja confirmada (try/except/else/finally)
+                try:
+                    if self.cliente_activo is None:
+                        logger.warning("Intento de reservar asesoría sin sesión iniciada.")
+                        raise ErrorValidacion("Debes iniciar sesión antes de reservar.")
+                    asesoria = obtener_asesoria()
+                    horas = obtener_horas()
+                    asesoria.validar_parametro(horas)
+                    if not asesoria.disponible:
+                        logger.warning(f"Intento de reservar una asesoría no disponible: {asesoria.nombre}")
+                        raise ErrorValidacion(f"La asesoría '{asesoria.nombre}' no está disponible.")
+                    reserva = Reserva(f"ASE-{len(self.reservas_asesoria) + 1:03d}", self.cliente_activo, asesoria, horas)
+                    reserva.confirmar()
+                except ErrorValidacion as e:
+                    messagebox.showerror("No se pudo reservar", str(e))
+                else:
+                    self.reservas_asesoria.append((reserva, asesoria))
+                    refrescar_lista()
+                    messagebox.showinfo("Reserva creada", reserva.obtener_resumen())
+                finally:
+                    logger.info("Operación de reserva de asesoría finalizada.")
+
+            def procesar_seleccionada():
+                try:
+                    costo = reserva_seleccionada().procesar()
+                except ErrorValidacion as e:
+                    messagebox.showerror("No se pudo procesar", str(e))
+                else:
+                    messagebox.showinfo("Reserva procesada", f"Total a pagar: ${costo:,.0f}")
+                finally:
+                    refrescar_lista()
+
+            def cancelar_seleccionada():
+                try:
+                    reserva_seleccionada().cancelar()
+                except ErrorValidacion as e:
+                    messagebox.showerror("No se pudo cancelar", str(e))
+                else:
+                    messagebox.showinfo("Reserva cancelada", "La reserva fue cancelada correctamente.")
+                finally:
+                    refrescar_lista()
+
+            # Widgets del formulario
+            texto_cliente = (f"Cliente activo: {self.cliente_activo.nombre}" if self.cliente_activo
+                             else "Sin sesión iniciada: vuelve al menú e inicia sesión para reservar")
+            tk.Label(marco, text=texto_cliente, font=fuente, bg=color).pack(pady=5)
+
+            tk.Label(marco, text="Asesoría:", font=fuente, bg=color).pack()
+            combo = ttk.Combobox(marco, textvariable=var_asesoria, state="readonly", width=40,
+                                 values=[asesoria.nombre for asesoria in self.asesorias])
+            combo.pack()
+            combo.bind("<<ComboboxSelected>>", mostrar_detalle)
+            tk.Label(marco, textvariable=var_detalle, font=fuente, bg=color).pack(pady=3)
+
+            tk.Label(marco, text="Horas (1 a 8):", font=fuente, bg=color).pack()
+            tk.Entry(marco, textvariable=var_horas, font=fuente, width=10).pack()
+            tk.Label(marco, textvariable=var_costo, font=fuente, bg=color).pack(pady=3)
+
+            botones = tk.Frame(marco, bg=color)
+            botones.pack(pady=8)
+            tk.Button(botones, text="Calcular costo", font=fuente, command=calcular_costo_estimado).pack(side="left", padx=5)
+            tk.Button(botones, text="Reservar", font=fuente, bg="#2F4371", fg="#FFFFFF", command=reservar).pack(side="left", padx=5)
+            tk.Button(botones, text="Procesar seleccionada", font=fuente, command=procesar_seleccionada).pack(side="left", padx=5)
+            tk.Button(botones, text="Cancelar seleccionada", font=fuente, command=cancelar_seleccionada).pack(side="left", padx=5)
+
+            tk.Label(marco, text="Mis reservas de asesoría (selecciona una para procesarla o cancelarla):", font=fuente, bg=color).pack()
+            lista.pack(padx=10, pady=5)
+            refrescar_lista()   # muestra las reservas hechas antes de salir y volver a entrar
         #Titulo del frame de asesoria
         #self.titulo.asesoria = tk.Label(self.frame_asesoria, text="Asesoria especializada", font=("Times new roman", 15))
         #self.titulo.asesoria.pack(side="top", fill="x")
 
-        boton_asesoria= tk.Button(self.frame_asesoria, text= "Asesoria \nespecializada", font= ("times new roman", 20), width=15, height=60, bg="#F4F7E9") 
+        boton_asesoria= tk.Button(self.frame_asesoria, text= "Asesoria \nespecializada", font= ("times new roman", 20), width=15, height=60, bg="#F4F7E9", command=interfaz_asesoria) 
         boton_asesoria.pack(side="top", pady=200)
         
 
@@ -479,10 +789,162 @@ class Inicio:
         self.ventana_inicio.mainloop()
 
 class Alquilar_equipo(Servicio):
-    pass
+    """Servicio especializado: alquiler de equipos (tarifa por día + seguro porcentual)."""
+    DIAS_MIN = 1
+    DIAS_MAX = 30
+    SEGURO = 0.05   # el seguro del equipo es el 5% de la tarifa diaria
+
+    def __init__(self, nombre, tarifa_dia, categoria, disponible=True):
+        # Validaciones estrictas de los datos del equipo
+        if not isinstance(nombre, str) or len(nombre.strip()) < 3:
+            raise self._rechazar("El nombre del equipo debe tener al menos 3 caracteres.")
+        if isinstance(tarifa_dia, bool) or not isinstance(tarifa_dia, (int, float)) or tarifa_dia <= 0:
+            raise self._rechazar("La tarifa por día debe ser un número mayor que 0.")
+        if not isinstance(categoria, str) or len(categoria.strip()) < 3:
+            raise self._rechazar("La categoría debe tener al menos 3 caracteres.")
+        if not isinstance(disponible, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._nombre = nombre.strip()
+        self._tarifa_dia = tarifa_dia
+        self._categoria = categoria.strip()
+        self._disponible = disponible
+        logger.info(f"Equipo creado correctamente: {self._nombre} ({self._categoria})")
+
+    @staticmethod
+    def _rechazar(mensaje):
+        # Registra la advertencia en el log y devuelve la excepción para lanzarla
+        logger.warning(f"Equipo: {mensaje}")
+        return ErrorValidacion(mensaje)
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @property
+    def tarifa_dia(self):
+        return self._tarifa_dia
+
+    @property
+    def categoria(self):
+        return self._categoria
+
+    @property
+    def disponible(self):
+        return self._disponible
+
+    @disponible.setter
+    def disponible(self, valor):
+        if not isinstance(valor, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._disponible = valor
+
+    def validar_parametro(self, dias=1):
+        # La duración del alquiler debe ser un número entre DIAS_MIN y DIAS_MAX
+        if isinstance(dias, bool) or not isinstance(dias, (int, float)):
+            raise self._rechazar("Los días deben ser un número.")
+        if not self.DIAS_MIN <= dias <= self.DIAS_MAX:
+            raise self._rechazar(f"Los días deben estar entre {self.DIAS_MIN} y {self.DIAS_MAX}.")
+        return True
+
+    def calcular_costo(self, dias=1, impuesto=0.0, descuento=0.0):
+        # Variantes (sobrecarga con parámetros opcionales):
+        #   calcular_costo()               -> 1 día con seguro (así lo usa Reserva.procesar)
+        #   calcular_costo(5)              -> 5 días
+        #   calcular_costo(5, 0.19)        -> 5 días con 19% de impuesto
+        #   calcular_costo(5, 0.19, 0.10)  -> 5 días con impuesto y 10% de descuento
+        self.validar_parametro(dias)
+        for etiqueta, valor in (("impuesto", impuesto), ("descuento", descuento)):
+            if isinstance(valor, bool) or not isinstance(valor, (int, float)) or not 0 <= valor <= 1:
+                raise self._rechazar(f"El {etiqueta} debe ser un número entre 0 y 1.")
+        total = self._tarifa_dia * (1 + self.SEGURO) * dias * (1 - descuento) * (1 + impuesto)
+        if total <= 0:
+            raise self._rechazar("El costo calculado es inconsistente.")
+        return round(total, 2)
+
+    def describir_servicio(self):
+        estado = "disponible" if self._disponible else "NO disponible"
+        return (f"Equipo '{self._nombre}' | categoría: {self._categoria} | "
+                f"${self._tarifa_dia * (1 + self.SEGURO):,.0f} por día (incluye seguro) | {estado}")
+
 
 class Asesoria_especializada(Servicio):
-    pass
+    """Servicio especializado: asesoría (tarifa por hora, con recargo según el nivel)."""
+    HORAS_MIN = 1
+    HORAS_MAX = 8
+    NIVELES = {"junior": 1.0, "senior": 1.5}   # el nivel senior cuesta 50% más
+
+    def __init__(self, nombre, tarifa_hora, nivel, disponible=True):
+        # Validaciones estrictas de los datos de la asesoría
+        if not isinstance(nombre, str) or len(nombre.strip()) < 3:
+            raise self._rechazar("El nombre de la asesoría debe tener al menos 3 caracteres.")
+        if isinstance(tarifa_hora, bool) or not isinstance(tarifa_hora, (int, float)) or tarifa_hora <= 0:
+            raise self._rechazar("La tarifa por hora debe ser un número mayor que 0.")
+        if not isinstance(nivel, str) or nivel.strip().lower() not in self.NIVELES:
+            raise self._rechazar("El nivel debe ser 'junior' o 'senior'.")
+        if not isinstance(disponible, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._nombre = nombre.strip()
+        self._tarifa_hora = tarifa_hora
+        self._nivel = nivel.strip().lower()
+        self._disponible = disponible
+        logger.info(f"Asesoría creada correctamente: {self._nombre} ({self._nivel})")
+
+    @staticmethod
+    def _rechazar(mensaje):
+        # Registra la advertencia en el log y devuelve la excepción para lanzarla
+        logger.warning(f"Asesoría: {mensaje}")
+        return ErrorValidacion(mensaje)
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @property
+    def tarifa_hora(self):
+        return self._tarifa_hora
+
+    @property
+    def nivel(self):
+        return self._nivel
+
+    @property
+    def disponible(self):
+        return self._disponible
+
+    @disponible.setter
+    def disponible(self, valor):
+        if not isinstance(valor, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._disponible = valor
+
+    def validar_parametro(self, horas=1):
+        # La duración debe ser un número entre HORAS_MIN y HORAS_MAX
+        if isinstance(horas, bool) or not isinstance(horas, (int, float)):
+            raise self._rechazar("Las horas deben ser un número.")
+        if not self.HORAS_MIN <= horas <= self.HORAS_MAX:
+            raise self._rechazar(f"Las horas deben estar entre {self.HORAS_MIN} y {self.HORAS_MAX}.")
+        return True
+
+    def calcular_costo(self, horas=1, impuesto=0.0, descuento=0.0):
+        # Variantes (sobrecarga con parámetros opcionales):
+        #   calcular_costo()               -> 1 hora con el recargo del nivel (así lo usa Reserva.procesar)
+        #   calcular_costo(3)              -> 3 horas
+        #   calcular_costo(3, 0.19)        -> 3 horas con 19% de impuesto
+        #   calcular_costo(3, 0.19, 0.10)  -> 3 horas con impuesto y 10% de descuento
+        self.validar_parametro(horas)
+        for etiqueta, valor in (("impuesto", impuesto), ("descuento", descuento)):
+            if isinstance(valor, bool) or not isinstance(valor, (int, float)) or not 0 <= valor <= 1:
+                raise self._rechazar(f"El {etiqueta} debe ser un número entre 0 y 1.")
+        total = self._tarifa_hora * self.NIVELES[self._nivel] * horas * (1 - descuento) * (1 + impuesto)
+        if total <= 0:
+            raise self._rechazar("El costo calculado es inconsistente.")
+        return round(total, 2)
+
+    def describir_servicio(self):
+        estado = "disponible" if self._disponible else "NO disponible"
+        return (f"Asesoría '{self._nombre}' | nivel {self._nivel} | "
+                f"${self._tarifa_hora * self.NIVELES[self._nivel]:,.0f} por hora | {estado}")
+
 
 if __name__ == "__main__":
     Inicio()
