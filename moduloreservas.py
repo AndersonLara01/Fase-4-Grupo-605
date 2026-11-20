@@ -77,10 +77,29 @@ class Servicio(ABC):
     def validar_parametro(self):
         pass
 
+#class EstadoReserva:
+    """Estados posibles de una reserva."""
+    PENDIENTE = "Pendiente"
+    CONFIRMADA = "Confirmada"
+    CANCELADA = "Cancelada"
+    PROCESADA = "Procesada"
+    FALLIDA = "Fallida"
+
+
 #Clase Reserva: integra cliente, servicio, duración y estado
 class Reserva(Entidad):
     def __init__(self, id_reserva, cliente, servicio, duracion):
         super().__init__(id_reserva)
+        self._validar_datos(cliente, servicio, duracion)
+        self._cliente = cliente
+        self._servicio = servicio
+        self._duracion = duracion
+        self._estado = EstadoReserva.PENDIENTE
+        self._costo_total = None
+        logger.info(f"Reserva {id_reserva} creada correctamente.")
+
+    @staticmethod
+    def _validar_datos(cliente, servicio, duracion):
         # Validaciones de los datos recibidos
         if not isinstance(cliente, Cliente):
             logger.warning("Intento de crear reserva sin cliente válido.")
@@ -91,12 +110,6 @@ class Reserva(Entidad):
         if isinstance(duracion, bool) or not isinstance(duracion, (int, float)) or duracion <= 0:
             logger.warning("Intento de crear reserva con duración inválida.")
             raise ErrorValidacion("La duración debe ser un número mayor que 0.")
-        self._cliente = cliente
-        self._servicio = servicio
-        self._duracion = duracion
-        self._estado = "Pendiente"
-        self._costo_total = None
-        logger.info(f"Reserva {id_reserva} creada correctamente.")
 
     @property
     def estado(self):
@@ -108,35 +121,35 @@ class Reserva(Entidad):
 
     def confirmar(self):
         # Solo se puede confirmar una reserva pendiente
-        if self._estado != "Pendiente":
-            logger.warning(f"Intento de confirmar reserva {self.id_entidad} " f"en estado {self._estado}.")
+        if self._estado != EstadoReserva.PENDIENTE:
+            logger.warning(f"Intento de confirmar reserva {self.id_entidad} en estado {self._estado}.")
             raise ErrorValidacion(f"No se puede confirmar una reserva en estado {self._estado}.")
-        self._estado = "Confirmada"
+        self._estado = EstadoReserva.CONFIRMADA
         logger.info(f"Reserva {self.id_entidad} confirmada correctamente.")
 
     def cancelar(self):
         # No se puede cancelar una reserva ya cancelada o procesada
-        if self._estado in ("Cancelada", "Procesada"):
-            logger.warning(f"Intento de cancelar reserva {self.id_entidad} " f"en estado {self._estado}.")
+        if self._estado in (EstadoReserva.CANCELADA, EstadoReserva.PROCESADA):
+            logger.warning(f"Intento de cancelar reserva {self.id_entidad} en estado {self._estado}.")
             raise ErrorValidacion(f"No se puede cancelar una reserva en estado {self._estado}.")
-        self._estado = "Cancelada"
+        self._estado = EstadoReserva.CANCELADA
         logger.info(f"Reserva {self.id_entidad} cancelada correctamente.")
 
     def procesar(self):
         try:
-            if self._estado != "Confirmada":
-                logger.warning(f"Intento de procesar reserva {self.id_entidad} " f"sin estar confirmada.")
+            if self._estado != EstadoReserva.CONFIRMADA:
+                logger.warning(f"Intento de procesar reserva {self.id_entidad} sin estar confirmada.")
                 raise ErrorValidacion(f"Solo se procesan reservas confirmadas (estado actual: {self._estado}).")
             costo = self._servicio.calcular_costo() * self._duracion
         except (TypeError, ValueError) as e:
             # Encadenamiento de excepciones: se conserva la causa original
-            self._estado = "Fallida"
+            self._estado = EstadoReserva.FALLIDA
             logger.exception(f"Error al procesar reserva {self.id_entidad}.")
             raise ErrorValidacion("No se pudo calcular el costo de la reserva.") from e
         else:
             self._costo_total = costo
-            self._estado = "Procesada"
-            logger.info(f"Reserva {self.id_entidad} procesada correctamente. " f"Costo: {costo}")
+            self._estado = EstadoReserva.PROCESADA
+            logger.info(f"Reserva {self.id_entidad} procesada correctamente. Costo: {costo}")
             return costo
 
     def obtener_resumen(self):
@@ -782,7 +795,8 @@ class Inicio:
         
 
 
-    #Mantener la ventana de inicio abierta
+        #Mantener la ventana de inicio abierta
+    def ejecutar(self):
         self.ventana_inicio.mainloop()
 
 class Alquilar_equipo(Servicio):
@@ -791,6 +805,10 @@ class Alquilar_equipo(Servicio):
     DIAS_MAX = 30
     SEGURO = 0.05   # el seguro del equipo es el 5% de la tarifa diaria
 
+<<<<<<< HEAD
+class ReservarSala(Servicio):
+    pass
+=======
     def __init__(self, nombre, tarifa_dia, categoria, disponible=True):
         # Validaciones estrictas de los datos del equipo
         if not isinstance(nombre, str) or len(nombre.strip()) < 3:
@@ -806,13 +824,23 @@ class Alquilar_equipo(Servicio):
         self._categoria = categoria.strip()
         self._disponible = disponible
         logger.info(f"Equipo creado correctamente: {self._nombre} ({self._categoria})")
+>>>>>>> 4ca76827c6a4f88a3955ce054262738b3072cef5
 
+<<<<<<< HEAD
+class AlquilarEquipo(Servicio):
+    pass
+=======
     @staticmethod
     def _rechazar(mensaje):
         # Registra la advertencia en el log y devuelve la excepción para lanzarla
         logger.warning(f"Equipo: {mensaje}")
         return ErrorValidacion(mensaje)
+>>>>>>> 4ca76827c6a4f88a3955ce054262738b3072cef5
 
+<<<<<<< HEAD
+class AsesoriaEspecializada(Servicio):
+    pass
+=======
     @property
     def nombre(self):
         return self._nombre
@@ -869,6 +897,7 @@ class Asesoria_especializada(Servicio):
     HORAS_MIN = 1
     HORAS_MAX = 8
     NIVELES = {"junior": 1.0, "senior": 1.5}   # el nivel senior cuesta 50% más
+>>>>>>> 4ca76827c6a4f88a3955ce054262738b3072cef5
 
     def __init__(self, nombre, tarifa_hora, nivel, disponible=True):
         # Validaciones estrictas de los datos de la asesoría
@@ -944,4 +973,4 @@ class Asesoria_especializada(Servicio):
 
 
 if __name__ == "__main__":
-    Inicio()
+    Inicio().ejecutar()
