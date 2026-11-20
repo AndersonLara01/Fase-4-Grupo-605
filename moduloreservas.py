@@ -2,7 +2,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk   # se agrega ttk porque es necesario para el menú desplegable de salas.
 from abc import ABC, abstractmethod
 import re
 
@@ -142,6 +142,83 @@ class Reserva(Entidad):
     def obtener_resumen(self):
         return (f"Reserva {self.id_entidad}: {self._cliente.nombre} | "
                 f"duración {self._duracion} | estado {self._estado}")
+# henry: coloque el modulo de reservas aca para que no quede abajo separado de las demas clases.
+class Reservar_sala(Servicio):
+    """Servicio especializado: reserva de salas (tarifa por hora)."""
+    HORAS_MIN = 1
+    HORAS_MAX = 12
+
+    def __init__(self, nombre, tarifa_hora, capacidad, disponible=True):
+        # Validaciones estrictas de los datos de la sala
+        if not isinstance(nombre, str) or len(nombre.strip()) < 3:
+            raise self._rechazar("El nombre de la sala debe tener al menos 3 caracteres.")
+        if isinstance(tarifa_hora, bool) or not isinstance(tarifa_hora, (int, float)) or tarifa_hora <= 0:
+            raise self._rechazar("La tarifa por hora debe ser un número mayor que 0.")
+        if isinstance(capacidad, bool) or not isinstance(capacidad, int) or capacidad <= 0:
+            raise self._rechazar("La capacidad debe ser un entero mayor que 0.")
+        if not isinstance(disponible, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._nombre = nombre.strip()
+        self._tarifa_hora = tarifa_hora
+        self._capacidad = capacidad
+        self._disponible = disponible
+        logger.info(f"Sala creada correctamente: {self._nombre}")
+
+    @staticmethod
+    def _rechazar(mensaje):
+        # Registra la advertencia en el log y devuelve la excepción para lanzarla
+        logger.warning(f"Sala: {mensaje}")
+        return ErrorValidacion(mensaje)
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @property
+    def tarifa_hora(self):
+        return self._tarifa_hora
+
+    @property
+    def capacidad(self):
+        return self._capacidad
+
+    @property
+    def disponible(self):
+        return self._disponible
+
+    @disponible.setter
+    def disponible(self, valor):
+        if not isinstance(valor, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._disponible = valor
+
+    def validar_parametro(self, horas=1):
+        # La duración debe ser un número entre HORAS_MIN y HORAS_MAX
+        if isinstance(horas, bool) or not isinstance(horas, (int, float)):
+            raise self._rechazar("Las horas deben ser un número.")
+        if not self.HORAS_MIN <= horas <= self.HORAS_MAX:
+            raise self._rechazar(f"Las horas deben estar entre {self.HORAS_MIN} y {self.HORAS_MAX}.")
+        return True
+
+    def calcular_costo(self, horas=1, impuesto=0.0, descuento=0.0):
+        # Variantes (sobrecarga con parámetros opcionales):
+        #   calcular_costo()               -> 1 hora   (así lo usa Reserva.procesar)
+        #   calcular_costo(3)              -> 3 horas
+        #   calcular_costo(3, 0.19)        -> 3 horas con 19% de impuesto
+        #   calcular_costo(3, 0.19, 0.10)  -> 3 horas con impuesto y 10% de descuento
+        self.validar_parametro(horas)
+        for etiqueta, valor in (("impuesto", impuesto), ("descuento", descuento)):
+            if isinstance(valor, bool) or not isinstance(valor, (int, float)) or not 0 <= valor <= 1:
+                raise self._rechazar(f"El {etiqueta} debe ser un número entre 0 y 1.")
+        total = self._tarifa_hora * horas * (1 - descuento) * (1 + impuesto)
+        if total <= 0:
+            raise self._rechazar("El costo calculado es inconsistente.")
+        return round(total, 2)
+
+    def describir_servicio(self):
+        estado = "disponible" if self._disponible else "NO disponible"
+        return (f"Sala '{self._nombre}' | capacidad: {self._capacidad} personas | "
+                f"${self._tarifa_hora:,.0f} por hora | {estado}")
 
 #Ventana de inicio
 class Inicio:
@@ -207,13 +284,13 @@ class Inicio:
         #Logica para regresar a la interfaz principal
         def volver_inicio():
             logger.info("El usuario regresó al menú principal.")
-            self.frame_interfaz_reserva.pack_forget()
+            self.frame_interfaz_reserva.destroy()   #henry: antes era pack_forget(); destroy evita acumular frames
             self.titulo.pack(side="top", fill="both")
             self.frame_reservas.pack(fill="both", expand=True, side="left")
             self.frame_alquiler.pack(fill="both", expand=True, side="left")
             self.frame_asesoria.pack(fill="both", expand=True, side="left")
 
-        #Interfaz del modulo de reserva
+        #henry: aca esta la interfaz del modulo de reserva
         def interfaz_reserva():
             logger.info("El usuario ingresó al módulo de reservas.")
             self.titulo.pack_forget()
@@ -250,6 +327,13 @@ class Inicio:
         #Frame de asesoria
         self.frame_asesoria = tk.Frame(self.ventana_inicio, bg="#2F4371")
         self.frame_asesoria.pack(fill="both", expand=True, side="left")
+        #--- Módulo de asesoría especializada: lista interna de asesorías y de sus reservas ---
+        self.asesorias = [
+            Asesoria_especializada("Asesoría en Python", 50000, "junior"),
+            Asesoria_especializada("Arquitectura de software", 80000, "senior"),
+            Asesoria_especializada("Bases de programación", 40000, "junior"),
+        ]
+        self.reservas_asesoria = []  # cada elemento es una tupla (Reserva, Asesoria_especializada)
 
         boton_asesoria= tk.Button(self.frame_asesoria, text= "Asesoria \nespecializada", font= ("times new roman", 20), width=15, height=60, bg="#F4F7E9") 
         boton_asesoria.pack(side="top", pady=200)
@@ -259,15 +343,163 @@ class Inicio:
     #Mantener la ventana de inicio abierta
         self.ventana_inicio.mainloop()
 
-
-class Reservar_sala(Servicio):
-    pass
-
 class Alquilar_equipo(Servicio):
-    pass
+    """Servicio especializado: alquiler de equipos (tarifa por día + seguro porcentual)."""
+    DIAS_MIN = 1
+    DIAS_MAX = 30
+    SEGURO = 0.05   # el seguro del equipo es el 5% de la tarifa diaria
+
+    def __init__(self, nombre, tarifa_dia, categoria, disponible=True):
+        # Validaciones estrictas de los datos del equipo
+        if not isinstance(nombre, str) or len(nombre.strip()) < 3:
+            raise self._rechazar("El nombre del equipo debe tener al menos 3 caracteres.")
+        if isinstance(tarifa_dia, bool) or not isinstance(tarifa_dia, (int, float)) or tarifa_dia <= 0:
+            raise self._rechazar("La tarifa por día debe ser un número mayor que 0.")
+        if not isinstance(categoria, str) or len(categoria.strip()) < 3:
+            raise self._rechazar("La categoría debe tener al menos 3 caracteres.")
+        if not isinstance(disponible, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._nombre = nombre.strip()
+        self._tarifa_dia = tarifa_dia
+        self._categoria = categoria.strip()
+        self._disponible = disponible
+        logger.info(f"Equipo creado correctamente: {self._nombre} ({self._categoria})")
+
+    @staticmethod
+    def _rechazar(mensaje):
+        # Registra la advertencia en el log y devuelve la excepción para lanzarla
+        logger.warning(f"Equipo: {mensaje}")
+        return ErrorValidacion(mensaje)
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @property
+    def tarifa_dia(self):
+        return self._tarifa_dia
+
+    @property
+    def categoria(self):
+        return self._categoria
+
+    @property
+    def disponible(self):
+        return self._disponible
+
+    @disponible.setter
+    def disponible(self, valor):
+        if not isinstance(valor, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._disponible = valor
+
+    def validar_parametro(self, dias=1):
+        # La duración del alquiler debe ser un número entre DIAS_MIN y DIAS_MAX
+        if isinstance(dias, bool) or not isinstance(dias, (int, float)):
+            raise self._rechazar("Los días deben ser un número.")
+        if not self.DIAS_MIN <= dias <= self.DIAS_MAX:
+            raise self._rechazar(f"Los días deben estar entre {self.DIAS_MIN} y {self.DIAS_MAX}.")
+        return True
+
+    def calcular_costo(self, dias=1, impuesto=0.0, descuento=0.0):
+        # Variantes (sobrecarga con parámetros opcionales):
+        #   calcular_costo()               -> 1 día con seguro (así lo usa Reserva.procesar)
+        #   calcular_costo(5)              -> 5 días
+        #   calcular_costo(5, 0.19)        -> 5 días con 19% de impuesto
+        #   calcular_costo(5, 0.19, 0.10)  -> 5 días con impuesto y 10% de descuento
+        self.validar_parametro(dias)
+        for etiqueta, valor in (("impuesto", impuesto), ("descuento", descuento)):
+            if isinstance(valor, bool) or not isinstance(valor, (int, float)) or not 0 <= valor <= 1:
+                raise self._rechazar(f"El {etiqueta} debe ser un número entre 0 y 1.")
+        total = self._tarifa_dia * (1 + self.SEGURO) * dias * (1 - descuento) * (1 + impuesto)
+        if total <= 0:
+            raise self._rechazar("El costo calculado es inconsistente.")
+        return round(total, 2)
+
+    def describir_servicio(self):
+        estado = "disponible" if self._disponible else "NO disponible"
+        return (f"Equipo '{self._nombre}' | categoría: {self._categoria} | "
+                f"${self._tarifa_dia * (1 + self.SEGURO):,.0f} por día (incluye seguro) | {estado}")
+
 
 class Asesoria_especializada(Servicio):
-    pass
+    """Servicio especializado: asesoría (tarifa por hora, con recargo según el nivel)."""
+    HORAS_MIN = 1
+    HORAS_MAX = 8
+    NIVELES = {"junior": 1.0, "senior": 1.5}   # el nivel senior cuesta 50% más
+
+    def __init__(self, nombre, tarifa_hora, nivel, disponible=True):
+        # Validaciones estrictas de los datos de la asesoría
+        if not isinstance(nombre, str) or len(nombre.strip()) < 3:
+            raise self._rechazar("El nombre de la asesoría debe tener al menos 3 caracteres.")
+        if isinstance(tarifa_hora, bool) or not isinstance(tarifa_hora, (int, float)) or tarifa_hora <= 0:
+            raise self._rechazar("La tarifa por hora debe ser un número mayor que 0.")
+        if not isinstance(nivel, str) or nivel.strip().lower() not in self.NIVELES:
+            raise self._rechazar("El nivel debe ser 'junior' o 'senior'.")
+        if not isinstance(disponible, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._nombre = nombre.strip()
+        self._tarifa_hora = tarifa_hora
+        self._nivel = nivel.strip().lower()
+        self._disponible = disponible
+        logger.info(f"Asesoría creada correctamente: {self._nombre} ({self._nivel})")
+
+    @staticmethod
+    def _rechazar(mensaje):
+        # Registra la advertencia en el log y devuelve la excepción para lanzarla
+        logger.warning(f"Asesoría: {mensaje}")
+        return ErrorValidacion(mensaje)
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @property
+    def tarifa_hora(self):
+        return self._tarifa_hora
+
+    @property
+    def nivel(self):
+        return self._nivel
+
+    @property
+    def disponible(self):
+        return self._disponible
+
+    @disponible.setter
+    def disponible(self, valor):
+        if not isinstance(valor, bool):
+            raise self._rechazar("La disponibilidad debe ser True o False.")
+        self._disponible = valor
+
+    def validar_parametro(self, horas=1):
+        # La duración debe ser un número entre HORAS_MIN y HORAS_MAX
+        if isinstance(horas, bool) or not isinstance(horas, (int, float)):
+            raise self._rechazar("Las horas deben ser un número.")
+        if not self.HORAS_MIN <= horas <= self.HORAS_MAX:
+            raise self._rechazar(f"Las horas deben estar entre {self.HORAS_MIN} y {self.HORAS_MAX}.")
+        return True
+
+    def calcular_costo(self, horas=1, impuesto=0.0, descuento=0.0):
+        # Variantes (sobrecarga con parámetros opcionales):
+        #   calcular_costo()               -> 1 hora con el recargo del nivel (así lo usa Reserva.procesar)
+        #   calcular_costo(3)              -> 3 horas
+        #   calcular_costo(3, 0.19)        -> 3 horas con 19% de impuesto
+        #   calcular_costo(3, 0.19, 0.10)  -> 3 horas con impuesto y 10% de descuento
+        self.validar_parametro(horas)
+        for etiqueta, valor in (("impuesto", impuesto), ("descuento", descuento)):
+            if isinstance(valor, bool) or not isinstance(valor, (int, float)) or not 0 <= valor <= 1:
+                raise self._rechazar(f"El {etiqueta} debe ser un número entre 0 y 1.")
+        total = self._tarifa_hora * self.NIVELES[self._nivel] * horas * (1 - descuento) * (1 + impuesto)
+        if total <= 0:
+            raise self._rechazar("El costo calculado es inconsistente.")
+        return round(total, 2)
+
+    def describir_servicio(self):
+        estado = "disponible" if self._disponible else "NO disponible"
+        return (f"Asesoría '{self._nombre}' | nivel {self._nivel} | "
+                f"${self._tarifa_hora * self.NIVELES[self._nivel]:,.0f} por hora | {estado}")
+
 
 if __name__ == "__main__":
     Inicio()
